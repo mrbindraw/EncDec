@@ -100,9 +100,8 @@ namespace EncDec
             }
 
             byte[] dataRead = new byte[fs.Length];
-            int readBytes = fs.Read(dataRead, 0, dataRead.Length);
-            Console.WriteLine("readBytes: {0}, fs.Length: {1}", readBytes, fs.Length);
-            outData = new byte[readBytes]; // check!
+            fs.Read(dataRead, 0, dataRead.Length);
+
             outData = dataRead;
             fs.Close();
 
