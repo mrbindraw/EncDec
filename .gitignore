@@ -1,0 +1,8 @@
+*.exe
+*.dll
+*.user
+.vs
+Properties
+Publish
+bin
+obj
