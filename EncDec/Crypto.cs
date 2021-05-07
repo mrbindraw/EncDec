@@ -11,19 +11,10 @@ namespace EncDec
         private static Crypto Instance = null;
 
         RijndaelManaged RijAlg = null;
-        byte[] Iv = null;
-        //byte[] Key = null;
 
         private Crypto()
         {
             RijAlg = new RijndaelManaged();
-
-            // Fixme: Generate IV and write into non-encrypted file and read IV from encrypted file, RijAlg.GenerateIV();
-            Iv = Encoding.ASCII.GetBytes("0123456789ABCDEF");
-
-            //Key = Encoding.ASCII.GetBytes("0123456789ABCDEF0123456789ABCDEF");
-            RijAlg.IV = Iv;
-            //RijAlg.Key = Key;
             //RijAlg.Mode = CipherMode.CBC;
         }
 
@@ -37,11 +28,22 @@ namespace EncDec
             return Instance;
         }
 
-        public byte[] GetEncryptData(byte[] data, int dataLength, byte[] key)
+        public void GenerateIV()
+        {
+            RijAlg.GenerateIV();
+            //RijAlg.IV = Encoding.ASCII.GetBytes("0123456789ABCDEF");
+        }
+
+        public byte[] GetIV()
+        {
+            return RijAlg.IV;
+        }
+
+        public byte[] GetEncryptData(byte[] data, int dataLength, byte[] key, byte[] iv)
         {
             byte[] dataEncrypt = null;
 
-            ICryptoTransform encryptorInterface = RijAlg.CreateEncryptor(key, Iv);
+            ICryptoTransform encryptorInterface = RijAlg.CreateEncryptor(key, iv);
             RijAlg.Padding = PaddingMode.Zeros;
 
             using (MemoryStream msEncrypt = new MemoryStream())
@@ -57,13 +59,13 @@ namespace EncDec
             return dataEncrypt;
         }
 
-        public byte[] GetDecryptData(byte[] data, int dataLength, byte[] key)
+        public byte[] GetDecryptData(byte[] data, int dataLength, byte[] key, byte[] iv)
         {
             byte[] dataDecrypt = new byte[dataLength];
 
             // see https://msdn.microsoft.com/en-us/library/system.security.cryptography.paddingmode(v=vs.110).aspx
             // see https://stackoverflow.com/questions/8583112/padding-is-invalid-and-cannot-be-removed
-            ICryptoTransform decryptorInterface = RijAlg.CreateDecryptor(key, Iv);
+            ICryptoTransform decryptorInterface = RijAlg.CreateDecryptor(key, iv);
             RijAlg.Padding = PaddingMode.Zeros;
 
             using (MemoryStream msDecrypt = new MemoryStream(data, 0, dataLength))

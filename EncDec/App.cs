@@ -137,12 +137,6 @@ namespace EncDec
 
         public void ProcessCommandLine(string[] args)
         {
-            //Console.WriteLine("args.Length: {0}", args.Length);
-            //foreach (string arg in args)
-            //{
-            //    Console.WriteLine("arg: {0}", arg);
-            //}
-
             if (args.Length < 1)
             {
                 PrintHelp();
@@ -183,10 +177,17 @@ namespace EncDec
                         if (ReadFile(argPathValue, dataLength, ref dataFromFile))
                         {
                             // encrypt data
-                            byte[] encData = Crypto.GetInstance().GetEncryptData(dataFromFile, dataFromFile.Length, key);
+                            Crypto.GetInstance().GenerateIV();
+                            byte[] iv = Crypto.GetInstance().GetIV();
+
+                            byte[] encData = Crypto.GetInstance().GetEncryptData(dataFromFile, dataFromFile.Length, key, iv);
+
+                            byte[] encDataIV = new byte[encData.Length + iv.Length];
+                            Buffer.BlockCopy(encData, 0, encDataIV, 0, encData.Length);
+                            Buffer.BlockCopy(iv, 0, encDataIV, encData.Length, iv.Length);
 
                             // write encrypt data into file
-                            if (WriteFile(argPathValue, encData.Length, encData))
+                            if (WriteFile(argPathValue, encDataIV.Length, encDataIV))
                             {
                                 Console.WriteLine("File encrypted successfully!");
                             }
@@ -212,8 +213,12 @@ namespace EncDec
                         int dataLength = 0;
                         if (ReadFile(argPathValue, dataLength, ref dataFromFile))
                         {
+                            int ivLength = 16;
+                            byte[] iv = new byte[ivLength];
+                            Buffer.BlockCopy(dataFromFile, dataFromFile.Length - ivLength, iv, 0, ivLength);
+
                             // decrypt data
-                            byte[] decData = Crypto.GetInstance().GetDecryptData(dataFromFile, dataFromFile.Length, key);
+                            byte[] decData = Crypto.GetInstance().GetDecryptData(dataFromFile, dataFromFile.Length - ivLength, key, iv);
 
                             // write decrypt data into file
                             string decDataStr = Encoding.UTF8.GetString(decData);
