@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.IO;
+
 
 namespace EncDec
 {
@@ -15,7 +13,6 @@ namespace EncDec
         private Crypto()
         {
             RijAlg = new RijndaelManaged();
-            //RijAlg.Mode = CipherMode.CBC;
         }
 
         public static Crypto GetInstance()
@@ -31,7 +28,6 @@ namespace EncDec
         public void GenerateIV()
         {
             RijAlg.GenerateIV();
-            //RijAlg.IV = Encoding.ASCII.GetBytes("0123456789ABCDEF");
         }
 
         public byte[] GetIV()
