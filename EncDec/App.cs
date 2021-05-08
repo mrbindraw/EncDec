@@ -91,6 +91,11 @@ namespace EncDec
                 return false;
             }
 
+            if (!File.Exists(path))
+            {
+                return false;
+            }
+
             FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read);
             if (fs.Length <= 0 || !fs.CanRead)
             {
@@ -110,6 +115,11 @@ namespace EncDec
         public bool WriteFile(string path, int dataLength, byte[] data)
         {
             if (path.Length == 0)
+            {
+                return false;
+            }
+
+            if (!File.Exists(path))
             {
                 return false;
             }
@@ -135,6 +145,8 @@ namespace EncDec
 
         public void ProcessCommandLine(string[] args)
         {
+            bool isError = false;
+
             if (args.Length < 1)
             {
                 PrintHelp();
@@ -189,9 +201,17 @@ namespace EncDec
                             {
                                 Console.WriteLine("File encrypted successfully!");
                             }
+                            else
+                            {
+                                isError = true;
+                                Console.WriteLine("ERROR: Can't write file: {0}", argPathValue);
+                            }
                         }
-
-                        return;
+                        else 
+                        {
+                            isError = true;
+                            Console.WriteLine("ERROR: Can't read file: {0}", argPathValue);
+                        }
                     }
                 }
             }
@@ -226,16 +246,25 @@ namespace EncDec
                             {
                                 Console.WriteLine("File decrypted successfully!");
                             }
+                            else
+                            {
+                                isError = true;
+                                Console.WriteLine("ERROR: Can't write file: {0}", argPathValue);
+                            }
                         }
-
-                        return;
+                        else
+                        {
+                            isError = true;
+                            Console.WriteLine("ERROR: Can't read file: {0}", argPathValue);
+                        }
                     }
                 }
             }
 
-
-            PrintHelp();
-            return;
+            if (isError)
+            {
+                PrintHelp();
+            }
         }
     }
 }
