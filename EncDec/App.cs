@@ -87,7 +87,6 @@ namespace EncDec
             // Fixme: Unused dataLength variable!
             if (path.Length == 0)
             {
-                outData = new byte[0];
                 return false;
             }
 
@@ -99,7 +98,6 @@ namespace EncDec
             FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read);
             if (fs.Length <= 0 || !fs.CanRead)
             {
-                outData = new byte[0];
                 return false;
             }
 
