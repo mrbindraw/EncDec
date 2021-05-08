@@ -92,8 +92,7 @@ namespace EncDec
             }
 
             FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read);
-            //if (fs.Length <= 0 || !fs.CanRead)
-            if (fs.Length < 16 || !fs.CanRead) // Minimal size 16 bytes for file, valid for Rijndael algorithm
+            if (fs.Length <= 0 || !fs.CanRead)
             {
                 outData = new byte[0];
                 return false;
