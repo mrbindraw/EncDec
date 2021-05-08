@@ -37,7 +37,7 @@ namespace EncDec
 
         public void ProcessCommandLine(string[] args)
         {
-            bool isError = false;
+            bool isSuccess = true;
 
             if (args.Length < 1)
             {
@@ -69,40 +69,16 @@ namespace EncDec
             {
                 if (Utils.GetInstance().ParseArgKey(args[1], new string[] { "-k", "--key" }, ref argKeyValue))
                 {
-                    byte[] key = Encoding.ASCII.GetBytes(argKeyValue);
-
                     if (Utils.GetInstance().ParseArgPath(args[2], new string[] { "-p", "--path" }, ref argPathValue))
                     {
-                        // read file
-                        byte[] dataFromFile = null;
-                        int dataLength = 0;
-                        if (Utils.GetInstance().ReadFile(argPathValue, dataLength, ref dataFromFile))
+                        isSuccess = ProcessCommandLineEncrypt(argKeyValue, argPathValue);
+                        if (isSuccess)
                         {
-                            // encrypt data
-                            Crypto.GetInstance().GenerateIV();
-                            byte[] iv = Crypto.GetInstance().GetIV();
-
-                            byte[] encData = Crypto.GetInstance().GetEncryptData(dataFromFile, dataFromFile.Length, key, iv);
-
-                            byte[] encDataIV = new byte[encData.Length + iv.Length];
-                            Buffer.BlockCopy(encData, 0, encDataIV, 0, encData.Length);
-                            Buffer.BlockCopy(iv, 0, encDataIV, encData.Length, iv.Length);
-
-                            // write encrypt data into file
-                            if (Utils.GetInstance().WriteFile(argPathValue, encDataIV.Length, encDataIV))
-                            {
-                                Console.WriteLine("File encrypted successfully!");
-                            }
-                            else
-                            {
-                                isError = true;
-                                Console.WriteLine("ERROR: Can't write file: {0}", argPathValue);
-                            }
+                            Console.WriteLine("File encrypted successfully!");
                         }
-                        else 
+                        else
                         {
-                            isError = true;
-                            Console.WriteLine("ERROR: Can't read file: {0}", argPathValue);
+                            Console.WriteLine("ERROR: Can't encrypt file: {0}", argPathValue);
                         }
                     }
                 }
@@ -114,49 +90,100 @@ namespace EncDec
             {
                 if (Utils.GetInstance().ParseArgKey(args[1], new string[] { "-k", "--key" }, ref argKeyValue))
                 {
-                    byte[] key = Encoding.ASCII.GetBytes(argKeyValue);
-
                     if (Utils.GetInstance().ParseArgPath(args[2], new string[] { "-p", "--path" }, ref argPathValue))
                     {
-                        // read encrypted file
-                        byte[] dataFromFile = null;
-                        int dataLength = 0;
-                        if (Utils.GetInstance().ReadFile(argPathValue, dataLength, ref dataFromFile))
+                        isSuccess = ProcessCommandLineDecrypt(argKeyValue, argPathValue);
+                        if (isSuccess)
                         {
-                            int ivLength = 16;
-                            byte[] iv = new byte[ivLength];
-                            Buffer.BlockCopy(dataFromFile, dataFromFile.Length - ivLength, iv, 0, ivLength);
-
-                            // decrypt data
-                            byte[] decData = Crypto.GetInstance().GetDecryptData(dataFromFile, dataFromFile.Length - ivLength, key, iv);
-
-                            // write decrypt data into file
-                            string decDataStr = Encoding.UTF8.GetString(decData);
-                            byte[] decDataClear = Encoding.UTF8.GetBytes(decDataStr.Trim('\0'));
-
-                            if (Utils.GetInstance().WriteFile(argPathValue, decDataClear.Length, decDataClear))
-                            {
-                                Console.WriteLine("File decrypted successfully!");
-                            }
-                            else
-                            {
-                                isError = true;
-                                Console.WriteLine("ERROR: Can't write file: {0}", argPathValue);
-                            }
+                            Console.WriteLine("File decrypted successfully!");
                         }
                         else
                         {
-                            isError = true;
-                            Console.WriteLine("ERROR: Can't read file: {0}", argPathValue);
+                            Console.WriteLine("ERROR: Can't decrypt file: {0}", argPathValue);
                         }
                     }
                 }
             }
 
-            if (isError)
+            if (!isSuccess)
             {
                 PrintHelp();
             }
         }
+
+        public bool ProcessCommandLineEncrypt(string argKeyValue, string argPathValue)
+        {
+            if (argKeyValue.Length == 0 || argPathValue.Length == 0)
+            {
+                return false;
+            }
+
+            byte[] key = Encoding.ASCII.GetBytes(argKeyValue);
+
+            // read file
+            byte[] dataFromFile = null;
+            int dataLength = 0;
+
+            if (!Utils.GetInstance().ReadFile(argPathValue, dataLength, ref dataFromFile))
+            {
+                return false;
+            }
+
+            // encrypt data
+            Crypto.GetInstance().GenerateIV();
+            byte[] iv = Crypto.GetInstance().GetIV();
+
+            byte[] encData = Crypto.GetInstance().GetEncryptData(dataFromFile, dataFromFile.Length, key, iv);
+
+            byte[] encDataIV = new byte[encData.Length + iv.Length];
+            Buffer.BlockCopy(encData, 0, encDataIV, 0, encData.Length);
+            Buffer.BlockCopy(iv, 0, encDataIV, encData.Length, iv.Length);
+
+            // write encrypt data into file
+            if (!Utils.GetInstance().WriteFile(argPathValue, encDataIV.Length, encDataIV))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        public bool ProcessCommandLineDecrypt(string argKeyValue, string argPathValue)
+        {
+            if (argKeyValue.Length == 0 || argPathValue.Length == 0)
+            {
+                return false;
+            }
+
+            byte[] key = Encoding.ASCII.GetBytes(argKeyValue);
+
+            // read encrypted file
+            byte[] dataFromFile = null;
+            int dataLength = 0;
+
+            if (!Utils.GetInstance().ReadFile(argPathValue, dataLength, ref dataFromFile))
+            {
+                return false;
+            }
+
+            int ivLength = 16;
+            byte[] iv = new byte[ivLength];
+            Buffer.BlockCopy(dataFromFile, dataFromFile.Length - ivLength, iv, 0, ivLength);
+
+            // decrypt data
+            byte[] decData = Crypto.GetInstance().GetDecryptData(dataFromFile, dataFromFile.Length - ivLength, key, iv);
+
+            // write decrypt data into file
+            string decDataStr = Encoding.UTF8.GetString(decData);
+            byte[] decDataClear = Encoding.UTF8.GetBytes(decDataStr.Trim('\0'));
+
+            if (!Utils.GetInstance().WriteFile(argPathValue, decDataClear.Length, decDataClear))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
     }
 }
