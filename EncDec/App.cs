@@ -2,6 +2,7 @@
 using System.Text;
 using System.IO;
 
+
 namespace EncDec
 {
     class App
@@ -35,8 +36,14 @@ namespace EncDec
             Console.WriteLine("v1.0.0");
         }
 
-        public bool ParseArgKey(string argCmd, ref string outKey)
+        public bool ParseArgKey(string argCmd, string[] keys, ref string outKey)
         {
+            if (argCmd.Length == 0 || keys.Length == 0)
+            {
+                outKey = string.Empty;
+                return false;
+            }
+
             int postfixIndex = argCmd.IndexOf('=');
             if (postfixIndex < 0)
             {
@@ -45,7 +52,7 @@ namespace EncDec
             }
 
             string argKey = argCmd.Substring(0, postfixIndex);
-            if (argKey == "-k" || argKey == "--key")
+            if (argKey == keys[0] || argKey == keys[1])
             {
                 string argKeyValue = argCmd.Substring(postfixIndex + 1);
 
@@ -62,8 +69,14 @@ namespace EncDec
             return false;
         }
 
-        public bool ParseArgPath(string argCmd, ref string outPath)
+        public bool ParseArgPath(string argCmd, string[] keys, ref string outPath)
         {
+            if (argCmd.Length == 0 || keys.Length == 0)
+            {
+                outPath = string.Empty;
+                return false;
+            }
+
             int postfixIndex = argCmd.IndexOf('=');
             if (postfixIndex < 0)
             {
@@ -72,7 +85,7 @@ namespace EncDec
             }
 
             string argPath = argCmd.Substring(0, postfixIndex);
-            if (argPath == "-p" || argPath == "--path")
+            if (argPath == keys[0] || argPath == keys[1])
             {
                 string argPathValue = argCmd.Substring(postfixIndex + 1);
                 outPath = argPathValue;
@@ -173,11 +186,11 @@ namespace EncDec
             // [-enc | --encrypt], [-k=<secretkey> | --key=<secretkey>], [-p=<filename> | --path=<filename>]
             if (args[0] == "-enc" || args[0] == "--encrypt")
             {
-                if (ParseArgKey(args[1], ref argKeyValue))
+                if (ParseArgKey(args[1], new string[] { "-k", "--key" }, ref argKeyValue))
                 {
                     byte[] key = Encoding.ASCII.GetBytes(argKeyValue);
 
-                    if (ParseArgPath(args[2], ref argPathValue))
+                    if (ParseArgPath(args[2], new string[] { "-p", "--path" }, ref argPathValue))
                     {
                         // read file
                         byte[] dataFromFile = null;
@@ -218,11 +231,11 @@ namespace EncDec
             // [-dec | --decrypt], [-k=<secretkey> | --key=<secretkey>], [-p=<filename> | --path=<filename>]
             if (args[0] == "-dec" || args[0] == "--decrypt")
             {
-                if (ParseArgKey(args[1], ref argKeyValue))
+                if (ParseArgKey(args[1], new string[] { "-k", "--key" }, ref argKeyValue))
                 {
                     byte[] key = Encoding.ASCII.GetBytes(argKeyValue);
 
-                    if (ParseArgPath(args[2], ref argPathValue))
+                    if (ParseArgPath(args[2], new string[] { "-p", "--path" }, ref argPathValue))
                     {
                         // read encrypted file
                         byte[] dataFromFile = null;
