@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Text;
-using System.IO;
 
 
 namespace EncDec
@@ -36,124 +35,6 @@ namespace EncDec
             Console.WriteLine("v1.0.0");
         }
 
-        public bool ParseArgKey(string argCmd, string[] keys, ref string outKey)
-        {
-            if (argCmd.Length == 0 || keys.Length == 0)
-            {
-                outKey = string.Empty;
-                return false;
-            }
-
-            int postfixIndex = argCmd.IndexOf('=');
-            if (postfixIndex < 0)
-            {
-                outKey = "";
-                return false;
-            }
-
-            string argKey = argCmd.Substring(0, postfixIndex);
-            if (argKey == keys[0] || argKey == keys[1])
-            {
-                string argKeyValue = argCmd.Substring(postfixIndex + 1);
-
-                // TODO ...
-                if (argKeyValue.Length != 32)
-                {
-                    
-                }
-
-                outKey = argKeyValue;
-                return true;
-            }
-
-            return false;
-        }
-
-        public bool ParseArgPath(string argCmd, string[] keys, ref string outPath)
-        {
-            if (argCmd.Length == 0 || keys.Length == 0)
-            {
-                outPath = string.Empty;
-                return false;
-            }
-
-            int postfixIndex = argCmd.IndexOf('=');
-            if (postfixIndex < 0)
-            {
-                outPath = string.Empty;
-                return false;
-            }
-
-            string argPath = argCmd.Substring(0, postfixIndex);
-            if (argPath == keys[0] || argPath == keys[1])
-            {
-                string argPathValue = argCmd.Substring(postfixIndex + 1);
-                outPath = argPathValue;
-                return true;
-            }
-
-            return false;
-        }
-
-        public bool ReadFile(string path, int dataLength, ref byte[] outData)
-        {
-            // Fixme: Unused dataLength variable!
-            if (path.Length == 0)
-            {
-                return false;
-            }
-
-            if (!File.Exists(path))
-            {
-                return false;
-            }
-
-            FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read);
-            if (fs.Length <= 0 || !fs.CanRead)
-            {
-                return false;
-            }
-
-            byte[] dataRead = new byte[fs.Length];
-            fs.Read(dataRead, 0, dataRead.Length);
-
-            outData = dataRead;
-            fs.Close();
-
-            return true;
-        }
-
-        public bool WriteFile(string path, int dataLength, byte[] data)
-        {
-            if (path.Length == 0)
-            {
-                return false;
-            }
-
-            if (!File.Exists(path))
-            {
-                return false;
-            }
-
-            FileStream fs = new FileStream(path, FileMode.OpenOrCreate, FileAccess.Write);
-            if (!fs.CanWrite)
-            {
-                return false;
-            }
-
-            long dataLengthL = dataLength;
-            if (dataLengthL < fs.Length)
-            {
-                fs.SetLength(dataLengthL);
-            }
-
-            fs.Seek(0, SeekOrigin.Begin);
-            fs.Write(data, 0, dataLength);
-            fs.Close();
-
-            return true;
-        }
-
         public void ProcessCommandLine(string[] args)
         {
             bool isError = false;
@@ -186,16 +67,16 @@ namespace EncDec
             // [-enc | --encrypt], [-k=<secretkey> | --key=<secretkey>], [-p=<filename> | --path=<filename>]
             if (args[0] == "-enc" || args[0] == "--encrypt")
             {
-                if (ParseArgKey(args[1], new string[] { "-k", "--key" }, ref argKeyValue))
+                if (Utils.GetInstance().ParseArgKey(args[1], new string[] { "-k", "--key" }, ref argKeyValue))
                 {
                     byte[] key = Encoding.ASCII.GetBytes(argKeyValue);
 
-                    if (ParseArgPath(args[2], new string[] { "-p", "--path" }, ref argPathValue))
+                    if (Utils.GetInstance().ParseArgPath(args[2], new string[] { "-p", "--path" }, ref argPathValue))
                     {
                         // read file
                         byte[] dataFromFile = null;
                         int dataLength = 0;
-                        if (ReadFile(argPathValue, dataLength, ref dataFromFile))
+                        if (Utils.GetInstance().ReadFile(argPathValue, dataLength, ref dataFromFile))
                         {
                             // encrypt data
                             Crypto.GetInstance().GenerateIV();
@@ -208,7 +89,7 @@ namespace EncDec
                             Buffer.BlockCopy(iv, 0, encDataIV, encData.Length, iv.Length);
 
                             // write encrypt data into file
-                            if (WriteFile(argPathValue, encDataIV.Length, encDataIV))
+                            if (Utils.GetInstance().WriteFile(argPathValue, encDataIV.Length, encDataIV))
                             {
                                 Console.WriteLine("File encrypted successfully!");
                             }
@@ -231,16 +112,16 @@ namespace EncDec
             // [-dec | --decrypt], [-k=<secretkey> | --key=<secretkey>], [-p=<filename> | --path=<filename>]
             if (args[0] == "-dec" || args[0] == "--decrypt")
             {
-                if (ParseArgKey(args[1], new string[] { "-k", "--key" }, ref argKeyValue))
+                if (Utils.GetInstance().ParseArgKey(args[1], new string[] { "-k", "--key" }, ref argKeyValue))
                 {
                     byte[] key = Encoding.ASCII.GetBytes(argKeyValue);
 
-                    if (ParseArgPath(args[2], new string[] { "-p", "--path" }, ref argPathValue))
+                    if (Utils.GetInstance().ParseArgPath(args[2], new string[] { "-p", "--path" }, ref argPathValue))
                     {
                         // read encrypted file
                         byte[] dataFromFile = null;
                         int dataLength = 0;
-                        if (ReadFile(argPathValue, dataLength, ref dataFromFile))
+                        if (Utils.GetInstance().ReadFile(argPathValue, dataLength, ref dataFromFile))
                         {
                             int ivLength = 16;
                             byte[] iv = new byte[ivLength];
@@ -253,7 +134,7 @@ namespace EncDec
                             string decDataStr = Encoding.UTF8.GetString(decData);
                             byte[] decDataClear = Encoding.UTF8.GetBytes(decDataStr.Trim('\0'));
 
-                            if (WriteFile(argPathValue, decDataClear.Length, decDataClear))
+                            if (Utils.GetInstance().WriteFile(argPathValue, decDataClear.Length, decDataClear))
                             {
                                 Console.WriteLine("File decrypted successfully!");
                             }
